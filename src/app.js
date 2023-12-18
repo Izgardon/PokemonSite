@@ -7,61 +7,110 @@ const apiUrl = window.POKEMON_API_URL;
 const pokemonContainer = document.getElementById('pokemonContainer');
 const modal = document.getElementById('modal');
 const modalContent = document.getElementById('modalContent');
-const searchInput = document.getElementById('search');
+const searchBox = document.getElementById('search');
+const paginationContainer = document.getElementById('paginationContainer');
 
 //Variables------------
 
-let allPokemon = [];
-let filteredPokemon = [];
+let pokemonList = [];
 
 //Event listeners--------
 
 //For listening for typing
-searchInput.addEventListener('input', handleSearch);
+searchBox.addEventListener('input', handleSearch);
 
 //Methods-------
 
 //Check to see if data is in cache, if not call api
 function checkCache() {
-    let pokemonList = JSON.parse(localStorage.getItem('pokemonData'));
+    pokemonList = JSON.parse(localStorage.getItem('pokemonData'));
     if(!pokemonList){
         fetchPokemon()
     } else {
-        allPokemon = pokemonList
-        displayPokemon()
+        displayPokemon(pokemonList)
     }
 }
 
 // Fetching pokemon from API
 async function fetchPokemon(){
      await axios.get(`${apiUrl}?limit=151`).then((resp) => {
-        allPokemon = resp.data.results;
-        localStorage.setItem('pokemonData', JSON.stringify(allPokemon));
-        displayPokemon();
+        pokemonList = resp.data.results;
+
+        //Setting local storage
+        localStorage.setItem('pokemonData', JSON.stringify(pokemonList));
+
+        //Displaying pokemon
+        displayPokemon(pokemonList);
     }).catch((err) => {
         console.error('Error fetching Pokémon:', err);
     }); 
 }
 
 // Display Pokémon on the page using CSS Grid
-function displayPokemon() {
+function displayPokemon(displayPokemonList, page = 1, itemsPerPage = 20) {
     pokemonContainer.innerHTML = '';
 
-    allPokemon.forEach(pokemon => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const displayedPokemon = displayPokemonList.slice(startIndex, endIndex);
+
+    displayedPokemon.forEach(pokemon => {
+        const capitalizedPokemonName = capitalizeFirstLetter(pokemon.name);
+        const pokemonImageUrl = getPokemonImageUrl(pokemon.url);
+
         const pokemonCard = document.createElement('div');
         pokemonCard.classList.add('pokemon-card');
-        pokemonCard.textContent = pokemon.name;
+        pokemonCard.innerHTML = `
+            <h3>${capitalizedPokemonName}</h3>
+            <img src="${pokemonImageUrl}" alt="${capitalizedPokemonName}">
+        `;
         pokemonCard.addEventListener('click', () => openModal(pokemon.name));
 
         pokemonContainer.appendChild(pokemonCard);
     });
+    if(displayPokemonList.length > itemsPerPage){
+        addPaginationButtons(page, Math.ceil(displayPokemonList.length / itemsPerPage));
+    }
+}
+
+// Get Pokémon image URL
+function getPokemonImageUrl(apiUrl) {
+    const pokemonId = apiUrl.split('/').slice(-2, -1)[0];
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+}
+
+// Add pagination buttons
+function addPaginationButtons(currentPage, totalPages) {
+    paginationContainer.innerHTML = '';
+
+    const previousButton = createPaginationButton('Previous', currentPage - 1, totalPages);
+    const nextButton = createPaginationButton('Next', currentPage + 1, totalPages);
+
+    paginationContainer.appendChild(previousButton);
+    paginationContainer.appendChild(nextButton);
+}
+
+function createPaginationButton(label, page, totalPages) {
+    const button = document.createElement('button');
+    button.textContent = label;
+    button.addEventListener('click', () => {
+        if (page >= 1 && page <= totalPages) {
+            handleSearch(page);
+        }
+    });
+    return button;
 }
 
 // Search functionality
-function handleSearch() {
-    console.log(searchInput.value.toLowerCase())
-        /* const filteredPokemonList = allPokemon.filter(pokemon => pokemon.name.includes(searchInput.toLowerCase()));
-        displayPokemon(filteredPokemonList); */
+function handleSearch(page = 1) {
+    let searchInput = searchBox.value.toLowerCase();
+    if(searchInput && searchInput.length > 0){
+        let filteredPokemonList = pokemonList.filter(pokemon => pokemon.name.includes(searchInput.toLowerCase()));
+        displayPokemon(filteredPokemonList, page); 
+    } else {
+        displayPokemon(pokemonList, page);
+    }
+    
 }
 
 // Open Modal and fetch more data
@@ -87,7 +136,6 @@ async function openModal(pokemonName) {
     }
 }
 
-
 //Clicking outside modal closes it
 function addCloseModalEventListener(event){
     const isClickInsideModal = modalContent.contains(event.target) || event.target === modalContent;
@@ -97,10 +145,17 @@ function addCloseModalEventListener(event){
     
 }
 
+//Helpers------
+
 // Close modal
 function closeModal() {
     modal.style.display = 'none';
     document.removeEventListener('click', addCloseModalEventListener);
+}
+
+// Capitalize
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 // Initial fetch
