@@ -13,11 +13,9 @@ const paginationContainer = document.getElementById('paginationContainer');
 //Variables------------
 
 let pokemonList = [];
-
-//Event listeners--------
-
-//For listening for typing
-searchBox.addEventListener('input', handleSearch);
+let searchDelayTimer;
+let currentPage = 1;
+let totalPages = 1;
 
 //Methods-------
 
@@ -29,13 +27,16 @@ function checkCache() {
     } else {
         displayPokemon(pokemonList)
     }
+    searchBox.value = '';
 }
 
 // Fetching pokemon from API
 async function fetchPokemon(){
      await axios.get(`${apiUrl}?limit=151`).then((resp) => {
         pokemonList = resp.data.results;
-
+        pokemonList.forEach((pokemon) => {
+            pokemon.image = getPokemonImageUrl(pokemon.url);
+        });
         //Setting local storage
         localStorage.setItem('pokemonData', JSON.stringify(pokemonList));
 
@@ -46,6 +47,12 @@ async function fetchPokemon(){
     }); 
 }
 
+// Get Pokémon image URL
+function getPokemonImageUrl(apiUrl) {
+    const pokemonId = apiUrl.split('/').slice(-2, -1)[0];
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+}
+
 // Display Pokémon on the page using CSS Grid
 function displayPokemon(displayPokemonList, page = 1, itemsPerPage = 20) {
     pokemonContainer.innerHTML = '';
@@ -53,52 +60,56 @@ function displayPokemon(displayPokemonList, page = 1, itemsPerPage = 20) {
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const displayedPokemon = displayPokemonList.slice(startIndex, endIndex);
-
     displayedPokemon.forEach(pokemon => {
         const capitalizedPokemonName = capitalizeFirstLetter(pokemon.name);
-        const pokemonImageUrl = getPokemonImageUrl(pokemon.url);
-
         const pokemonCard = document.createElement('div');
         pokemonCard.classList.add('pokemon-card');
         pokemonCard.innerHTML = `
             <h3>${capitalizedPokemonName}</h3>
-            <img src="${pokemonImageUrl}" alt="${capitalizedPokemonName}">
+            <img src="${pokemon.image}" alt="${capitalizedPokemonName}">
         `;
         pokemonCard.addEventListener('click', () => openModal(pokemon.name));
 
         pokemonContainer.appendChild(pokemonCard);
     });
-    if(displayPokemonList.length > itemsPerPage){
-        addPaginationButtons(page, Math.ceil(displayPokemonList.length / itemsPerPage));
-    }
-}
 
-// Get Pokémon image URL
-function getPokemonImageUrl(apiUrl) {
-    const pokemonId = apiUrl.split('/').slice(-2, -1)[0];
-    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+    //Clearing buttons if not enough results
+    paginationContainer.innerHTML = '';
+    if(displayPokemonList.length > itemsPerPage){
+        totalPages = Math.ceil(displayPokemonList.length / itemsPerPage);
+        addPaginationButtons(page);
+    } 
 }
 
 // Add pagination buttons
-function addPaginationButtons(currentPage, totalPages) {
-    paginationContainer.innerHTML = '';
-
-    const previousButton = createPaginationButton('Previous', currentPage - 1, totalPages);
-    const nextButton = createPaginationButton('Next', currentPage + 1, totalPages);
+function addPaginationButtons(currentPage) {
+    const previousButton = createPaginationButton('Previous', currentPage - 1);
+    const nextButton = createPaginationButton('Next', currentPage + 1);
+    const pageLabel = document.createElement('span');
+    pageLabel.textContent = `Page ${currentPage} of ${totalPages}`;
 
     paginationContainer.appendChild(previousButton);
+    paginationContainer.appendChild(pageLabel);
     paginationContainer.appendChild(nextButton);
 }
 
-function createPaginationButton(label, page, totalPages) {
+function createPaginationButton(label, page) {
     const button = document.createElement('button');
     button.textContent = label;
     button.addEventListener('click', () => {
         if (page >= 1 && page <= totalPages) {
-            handleSearch(page);
+            handleSearchWithDelay(page);
         }
     });
     return button;
+}
+
+// Search delay
+function handleSearchWithDelay(page = 1) {
+    clearTimeout(searchDelayTimer);
+    searchDelayTimer = setTimeout(() => {
+        handleSearch(page);
+    }, 300);
 }
 
 // Search functionality

@@ -1,3 +1,4 @@
+//Function that lets env variables be globally accessible without needing a compiler
 function loadEnvironmentVariables() {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', '.env', false);
