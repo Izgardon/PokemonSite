@@ -33,8 +33,11 @@ body {
 .modal-content {
     background: #fff;
     padding: 20px;
-    border-radius: 5px;
+    border-radius: 10px;
+    max-width: 400px;
+    text-align: center;
 }
+
 
 .close-btn {
     margin-top: 10px;
@@ -45,3 +48,20 @@ body {
     border-radius: 5px;
     cursor: pointer;
 }
+
+.app-title {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 24px;
+}
+
+.search-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#search {
+    padding: 5px;
+    margin-left: 5px;
+}
+

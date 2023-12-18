@@ -11,13 +11,18 @@
     <script src="src/app.js" defer></script>
 </head>
 <body>
-    <div>Hello</div>
+    <h1 class="app-title">Pokémon</h1>
+
+    <div class="search-container">
+        <label for="search">Search Pokémon:</label>
+        <input type="text" id="search" oninput="handleSearch()">
+    </div>
+
     <div class="pokemon-container" id="pokemonContainer"></div>
 
     <div class="modal" id="modal">
         <div class="modal-content" id="modalContent"></div>
         <button class="close-btn" onclick="closeModal()">Close</button>
     </div>
-    
 </body>
 </html>
