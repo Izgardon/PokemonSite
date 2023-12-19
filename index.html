@@ -17,13 +17,27 @@
         <label for="search">Search Pokémon:</label>
         <input type="text" id="search" oninput="handleSearchWithDelay()">
     </div>
+    <div class="filter-container">
+        <div>
+            <label for="typeDropdown">Type:</label>
+            <select id="typeDropdown"></select>
+        </div>
+        <div>
+            <label for="colorDropdown">Color:</label>
+            <select id="colorDropdown"></select>
+        </div>
+        <div>
+            <label for="regionDropdown">Region:</label>
+            <select id="regionDropdown"></select>
+        </div>
+    </div>
 
     <div class="pokemon-container" id="pokemonContainer"></div>
     <div class="pagination-container" id="paginationContainer"></div>
 
     <div class="modal" id="modal">
         <div class="modal-content" id="modalContent"></div>
-        <button class="close-btn" onclick="closeModal()">Close</button>
+        <button class="close-btn" onclick="closeModal()">X</button>
     </div>
 </body>
 </html>
