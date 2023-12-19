@@ -7,6 +7,7 @@ You can search for pokemon from the original 151, and filter based on their type
 
 
 **Dev Notes**
+
 .env file is being pushed but would normally be hidden, just for ease of testing
 
 **Possible improvements**
