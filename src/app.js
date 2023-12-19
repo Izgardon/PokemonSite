@@ -275,7 +275,7 @@ function addCloseModalEventListener(event){
         closeModal();
     } 
 }
-// Function to handle 'keydown' event for Esc key
+// Esc key closes modal
 function handleEscKeyPress(event) {
     if (event.key === 'Escape') {
         closeModal();
