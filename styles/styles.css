@@ -92,3 +92,7 @@ body {
     margin-top: 20px;
 }
 
+.modal-content:focus {
+    outline: 2px solid #007BFF; /* Adjust the color as needed */
+}
+

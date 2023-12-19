@@ -9,6 +9,9 @@ const modal = document.getElementById('modal');
 const modalContent = document.getElementById('modalContent');
 const searchBox = document.getElementById('search');
 const paginationContainer = document.getElementById('paginationContainer');
+const typeDropdown = document.getElementById('typeDropdown');
+const colorDropdown = document.getElementById('colorDropdown');
+
 
 //Variables------------
 
@@ -161,12 +164,13 @@ function displayPokemon(displayPokemonList, page = 1, itemsPerPage = 20) {
     const endIndex = startIndex + itemsPerPage;
     const displayedPokemon = displayPokemonList.slice(startIndex, endIndex);
     displayedPokemon.forEach(pokemon => {
-        const capitalizedPokemonName = capitalizeFirstLetter(pokemon.name);
+        const capitalisedPokemonName = capitaliseFirstLetter(pokemon.name);
         const pokemonCard = document.createElement('div');
         pokemonCard.classList.add('pokemon-card');
+        pokemonCard.tabIndex = 0;
         pokemonCard.innerHTML = `
-            <h3>${capitalizedPokemonName}</h3>
-            <img src="${pokemon.image}" alt="${capitalizedPokemonName}">
+            <h3>${capitalisedPokemonName}</h3>
+            <img src="${pokemon.image}" alt="${capitalisedPokemonName}">
         `;
         pokemonCard.addEventListener('click', () => openModal(pokemon.name));
 
@@ -188,6 +192,7 @@ function addPaginationButtons(currentPage) {
     const nextButton = createPaginationButton('Next', currentPage + 1);
     const pageLabel = document.createElement('span');
     pageLabel.textContent = `Page ${currentPage} of ${totalPages}`;
+    pageLabel.setAttribute('aria-live', 'polite');
 
     paginationContainer.appendChild(previousButton);
     paginationContainer.appendChild(pageLabel);
@@ -202,6 +207,20 @@ function createPaginationButton(label, page) {
             fetchFilteredPokemon(page);
         }
     });
+
+    button.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (page >= 1 && page <= totalPages) {
+                fetchFilteredPokemon(page);
+            }
+        }
+    });
+
+    button.setAttribute('role', 'button');
+    button.setAttribute('aria-label', `${label} page ${page}`);
+    button.setAttribute('tabindex', '0');
+
     return button;
 }
 
@@ -227,17 +246,20 @@ async function openModal(pokemonName) {
         const pokemonData = response.data;
 
         const modalHtml = `
-            <h2>${pokemonData.name}</h2>
+        <div role="dialog" aria-labelledby="pokemonDialogTitle" aria-describedby="pokemonDialogContent" tabindex="-1">
+            <h2 id="pokemonDialogTitle">${pokemonData.name}</h2>
             <img src="${pokemonData.sprites.front_default}" alt="${pokemonData.name}">
-            <p>Height: ${pokemonData.height}</p>
+            <p>Height: ${pokemonData.height}0cm</p>
             <p>Weight: ${pokemonData.weight}</p>
             <p>Base Experience: ${pokemonData.base_experience}</p>
             <p>Abilities: ${pokemonData.abilities.map(ability => ability.ability.name).join(', ')}</p>
+        </div>
         `;
         modalContent.innerHTML = modalHtml;
         modal.style.display = 'flex';
 
-        document.addEventListener('click', addCloseModalEventListener) 
+        document.addEventListener('click', addCloseModalEventListener);
+        document.addEventListener('keydown', handleEscKeyPress);
     } catch (error) {
         console.error('Error fetching Pokémon details:', error);
     }
@@ -253,15 +275,22 @@ function addCloseModalEventListener(event){
         closeModal();
     } 
 }
+// Function to handle 'keydown' event for Esc key
+function handleEscKeyPress(event) {
+    if (event.key === 'Escape') {
+        closeModal();
+    }
+}
 
 // Close modal
 function closeModal() {
     modal.style.display = 'none';
     document.removeEventListener('click', addCloseModalEventListener);
+    document.removeEventListener('keydown', handleEscKeyPress);
 }
 
-// Capitalize
-function capitalizeFirstLetter(string) {
+// Capitalise
+function capitaliseFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
@@ -280,9 +309,6 @@ function handleSearchWithDelay() {
 }
 
 function addListenerToDropdowns(){
-    const typeDropdown = document.getElementById('typeDropdown');
-    const colorDropdown = document.getElementById('colorDropdown');
-
     typeDropdown.addEventListener('change', handleTypeChange);
     colorDropdown.addEventListener('change', handleColorChange);
 }

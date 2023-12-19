@@ -11,29 +11,30 @@
     <script src="src/app.js" defer></script>
 </head>
 <body>
-    <h1 class="app-title">Pokémon</h1>
+    <h1 class="app-title" role="heading" aria-level="1">Pokémon</h1>
 
     <div class="search-container">
         <label for="search">Search Pokémon:</label>
-        <input type="text" id="search" oninput="handleSearchWithDelay()">
+        <input type="text" id="search" oninput="handleSearchWithDelay()" aria-label="Search input for Pokémon">
     </div>
+    
     <div class="filter-container">
         <div>
             <label for="typeDropdown">Type:</label>
-            <select id="typeDropdown"></select>
+            <select id="typeDropdown" aria-label="Select Pokémon type"></select>
         </div>
         <div>
             <label for="colorDropdown">Color:</label>
-            <select id="colorDropdown"></select>
+            <select id="colorDropdown" aria-label="Select Pokémon color"></select>
         </div>
     </div>
 
-    <div class="pokemon-container" id="pokemonContainer"></div>
-    <div class="pagination-container" id="paginationContainer"></div>
+    <div class="pokemon-container" id="pokemonContainer" role="region" aria-live="polite" aria-relevant="all"></div>
+    <div class="pagination-container" id="paginationContainer" role="navigation"></div>
 
-    <div class="modal" id="modal">
+    <div class="modal" id="modal" role="dialog" aria-modal="true">
         <div class="modal-content" id="modalContent"></div>
-        <button class="close-btn" onclick="closeModal()">X</button>
+        <button class="close-btn" onclick="closeModal()" aria-label="Close modal">×</button>
     </div>
 </body>
 </html>
