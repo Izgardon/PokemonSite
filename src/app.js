@@ -14,9 +14,13 @@ const paginationContainer = document.getElementById('paginationContainer');
 
 //Pokemon and associated data
 let pokemonList = [];
+//Available filters
 let types = [];
 let colors = [];
-let regions = [];
+//Chosen filters
+let selectedType = '';
+let selectedColor = '';
+let searchInput = '';
 
 //Search delay
 let searchDelayTimer;
@@ -31,15 +35,13 @@ function checkCache() {
     pokemonList = JSON.parse(localStorage.getItem('pokemonData'));
     types = JSON.parse(localStorage.getItem('pokemonTypes'));
     colors = JSON.parse(localStorage.getItem('pokemonColors'));
-    regions = JSON.parse(localStorage.getItem('pokemonRegions'));
-    if(!pokemonList || !types || !regions || !colors){
+    if(!pokemonList || !types || !colors){
         fetchPokemon()
     } else {
         displayPokemon(pokemonList);
         // Populate dropdowns
         populateDropdown('typeDropdown', types);
         populateDropdown('colorDropdown', colors);
-        populateDropdown('regionDropdown', regions);
         addListenerToDropdowns();
     }
     searchBox.value = '';
@@ -70,21 +72,14 @@ async function fetchFilters(){
         const typesResponse = await axios.get(`${apiUrl}/type`);
         types = typesResponse.data.results;
         localStorage.setItem('pokemonTypes', JSON.stringify(types));
-        console.log('hi')
         // Fetch colors
         const colorsResponse = await axios.get(`${apiUrl}/pokemon-color`);
         colors = colorsResponse.data.results;
         localStorage.setItem('pokemonColors', JSON.stringify(colors));
 
-        // Fetch regions
-        const regionsResponse = await axios.get(`${apiUrl}/region`);
-        regions = regionsResponse.data.results;
-        localStorage.setItem('pokemonRegions', JSON.stringify(regions));
-
         // Populate dropdowns
         populateDropdown('typeDropdown', types);
         populateDropdown('colorDropdown', colors);
-        populateDropdown('regionDropdown', regions);
         addListenerToDropdowns();
     } catch (err) {
         console.error('Error fetching filters:', err);
@@ -92,17 +87,73 @@ async function fetchFilters(){
 }
 
 
-function handleDropdownChange(event) {
-    const selectedValue = event.target.value;
-    const dropdownId = event.target.id;
-
-    /* const apiEndpoint = apiEndpoints[dropdownId];
-
-    const apiUrl = `${apiEndpoint}${selectedValue}/`; */
+// Fetch Pokémon based on filters and search
+async function fetchFilteredPokemon(page) {
+    try {
+      
+        // Fetch Pokémon for each filter
+        const typeFilter = selectedType ? fetchFilterData('type', selectedType) : pokemonList;
+        const colorFilter = selectedColor ? fetchFilterData('pokemon-color', selectedColor) : pokemonList;
+        
+        // Wait for all filter requests to complete
+        const [typeResults, colorResults] = await Promise.all([
+            typeFilter,
+            colorFilter,
+        ]);
+    
+  
+      // Find the intersection of results
+      const filteredPokemonList = findIntersection(typeResults, colorResults);
+      // Apply search filter
+      const searchedPokemonList = (searchInput && searchInput.length > 0) ? filteredPokemonList.filter(pokemon => pokemon.name.includes(searchInput.toLowerCase())) : filteredPokemonList;
+  
+      // Compare with the original pokemonList
+      const finalFilteredPokemonList = findIntersection(pokemonList, searchedPokemonList);
+  
+      // Display filtered Pokémon
+      displayPokemon(finalFilteredPokemonList, page);
+    } catch (error) {
+      console.error('Error fetching filtered Pokémon:', error);
+    }
+}
+  
+// Fetch filter data
+async function fetchFilterData(filterType, filterValue) {
+    const url = `${apiUrl}/${filterType}/${filterValue}?limit=151`;
+    const response = await axios.get(url);
+    if(filterType === 'pokemon-color'){
+        return response.data.pokemon_species;
+    }
+    return response.data.pokemon.map(item => item.pokemon);
+}
+  
+// Find the intersection of arrays
+function findIntersection(...arrays) {
+    return arrays.reduce((accumulator, currentArray) =>
+      accumulator.filter(value =>
+        currentArray.some(item => item.name === value.name)
+      )
+    );
   }
 
+// Handle dropdown and search changes
+function handleTypeChange(event) {
+    selectedType = event.target.value;
+    fetchFilteredPokemon();
+}
+  
+function handleColorChange(event) {
+    selectedColor = event.target.value;
+    fetchFilteredPokemon();
+}
+  
+function handleSearch() {
+    searchInput = searchBox.value.toLowerCase();
+    fetchFilteredPokemon();
+}
 
-// Display Pokémon on the page using CSS Grid
+
+// Display Pokémon on the page using grid for responsivity
 function displayPokemon(displayPokemonList, page = 1, itemsPerPage = 20) {
     pokemonContainer.innerHTML = '';
 
@@ -130,17 +181,6 @@ function displayPokemon(displayPokemonList, page = 1, itemsPerPage = 20) {
     } 
 }
 
-// Search functionality
-function handleSearch(page = 1) {
-    let searchInput = searchBox.value.toLowerCase();
-    if(searchInput && searchInput.length > 0){
-        let filteredPokemonList = pokemonList.filter(pokemon => pokemon.name.includes(searchInput.toLowerCase()));
-        displayPokemon(filteredPokemonList, page); 
-    } else {
-        displayPokemon(pokemonList, page);
-    }
-    
-}
 
 // Add pagination buttons
 function addPaginationButtons(currentPage) {
@@ -159,7 +199,7 @@ function createPaginationButton(label, page) {
     button.textContent = label;
     button.addEventListener('click', () => {
         if (page >= 1 && page <= totalPages) {
-            handleSearchWithDelay(page);
+            fetchFilteredPokemon(page);
         }
     });
     return button;
@@ -232,21 +272,19 @@ function getPokemonImageUrl(url) {
 }
 
 // Search delay
-function handleSearchWithDelay(page = 1) {
+function handleSearchWithDelay() {
     clearTimeout(searchDelayTimer);
     searchDelayTimer = setTimeout(() => {
-        handleSearch(page);
+        handleSearch();
     }, 300);
 }
 
 function addListenerToDropdowns(){
     const typeDropdown = document.getElementById('typeDropdown');
     const colorDropdown = document.getElementById('colorDropdown');
-    const regionDropdown = document.getElementById('regionDropdown');
 
     typeDropdown.addEventListener('change', handleTypeChange);
     colorDropdown.addEventListener('change', handleColorChange);
-    regionDropdown.addEventListener('change', handleRegionChange);
 }
 
 // Initial fetch
